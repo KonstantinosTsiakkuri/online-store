@@ -22,10 +22,10 @@ class Product:
 
 class Category:
     """Класс, создающий объект с информацией о категориях списка продкутов класса Product"""
-    total_categories = 0
-    total_products = 0
+    category_count = 0
+    product_count = 0
     name: str
-    descriprion: str
+    description: str
     products: list[Product]
 
     def __init__(self, name, decription, products):
