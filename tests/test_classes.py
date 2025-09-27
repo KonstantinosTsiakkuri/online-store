@@ -15,13 +15,13 @@ class TestProduct:
 class TestCategory:
     def setup_method(self):
         # Сбрасываем счётчики перед каждым тестом
-        classes.Category.total_categories = 0
-        classes.Category.total_products = 0
+        classes.Category.category_count = 0
+        classes.Category.product_count = 0
 
     def test_initialisation(self):
         category = classes.Category("Laptop", "Portable Computer", [])
         assert category.name == "Laptop"
-        assert category.descriprion == "Portable Computer"
+        assert category.description == "Portable Computer"
         assert category.products == []
 
     def test_total_categories_and_products(self):
@@ -33,7 +33,7 @@ class TestCategory:
             "Furniture", "Home", [classes.Product("Chair", "Office chair", 150, 20)]
         )
 
-        assert classes.Category.total_categories == 2
+        assert classes.Category.category_count == 2
         assert (
-            classes.Category.total_products == 2
+            classes.Category.product_count == 2
         )  # Поскольку в каждой категории один продукт

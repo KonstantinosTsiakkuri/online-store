@@ -30,10 +30,10 @@ class Category:
 
     def __init__(self, name, decription, products):
         self.name = name
-        self.descriprion = decription
+        self.description = decription
         self.products = products
-        Category.total_categories += 1
-        Category.total_products += len(self.products)
+        Category.category_count += 1
+        Category.product_count += len(self.products)
 
 
 def json_to_classes_object(path=os.getenv("PATH_TO_JSON")):
