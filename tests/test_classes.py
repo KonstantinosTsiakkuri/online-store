@@ -11,6 +11,18 @@ class TestProduct:
         assert product.price == 1500
         assert product.quantity == 10
 
+    def test_price_setter_positive(self):
+        product = classes.Product("Laptop", "Portable computer", 1500.0, 10)
+        product.price = 2000
+        assert product.price == 2000
+
+    def test_price_setter_negative(self, capsys):
+        product = classes.Product("Laptop", "Portable computer", 1500.0, 10)
+        product.price = -1000
+        captured = capsys.readouterr()
+        assert captured.out == "Цена не должна быть нулевая или отрицательная\n"
+        assert product.price == 1500  # цена не должна измениться
+
 
 class TestCategory:
     def setup_method(self):
@@ -22,7 +34,7 @@ class TestCategory:
         category = classes.Category("Laptop", "Portable Computer", [])
         assert category.name == "Laptop"
         assert category.description == "Portable Computer"
-        assert category.products == []
+        assert category.products[0] == []
 
     def test_total_categories_and_products(self):
         # Создание категорий с продуктами
