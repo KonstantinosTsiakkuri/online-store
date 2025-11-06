@@ -8,32 +8,65 @@ load_dotenv()
 
 class Product:
     """Класс, создающий объект с информацией о продукте"""
+
     name: str
     description: str
-    price: float
     quantity: int
 
     def __init__(self, name, description, price, quantity):
         self.name = name
         self.description = description
-        self.price = price
+        self.__price = price
         self.quantity = quantity
+
+    @classmethod
+    def new_product(cls, products):
+        for product in products:
+            return cls(
+                name=product.get("name"),
+                description=product.get("description"),
+                price=product.get("price"),
+                quantity=product.get("quantity"),
+            )
+
+    @property
+    def price(self):
+        return self.__price
+
+    @price.setter
+    def price(self, price):
+        if price <= 0:
+            print("Цена не должна быть нулевая или отрицательная")
+        else:
+            self.__price = price
 
 
 class Category:
     """Класс, создающий объект с информацией о категориях списка продкутов класса Product"""
+
     category_count = 0
     product_count = 0
     name: str
     description: str
-    products: list[Product]
 
-    def __init__(self, name, decription, products):
+    def __init__(self, name, description, products):
         self.name = name
-        self.description = decription
-        self.products = products
+        self.description = description
+        self.__products = products
         Category.category_count += 1
-        Category.product_count += len(self.products)
+        Category.product_count += len(self.__products)
+
+    def add_product(self, product):
+        self.__products.append(product)
+        Category.product_count += 1
+
+    @property
+    def products(self):
+        product_list = [
+            f"{product.name}, {product.price} Остаток: {product.quantity}"
+            for product in self.__products
+        ]
+        return self.__products, product_list
 
 
 def json_to_classes_object(path=os.getenv("PATH_TO_JSON")):
