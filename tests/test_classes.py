@@ -1,4 +1,4 @@
-import pytest
+
 
 from src import classes
 
@@ -29,7 +29,7 @@ class TestProduct:
             "name": "Smartphone",
             "description": "Smart",
             "price": 10000.0,
-            "quantity": 5
+            "quantity": 5,
         }
         product = classes.Product.new_product(product_data)
 
@@ -37,6 +37,24 @@ class TestProduct:
         assert product.description == "Smart"
         assert product.price == 10000.0
         assert product.quantity == 5
+
+    def test_product_str(self):
+        """Тестируем магический метод __str__ для продукта"""
+        product = classes.Product("Smartphone", "Smart", 10000.0, 5)
+        expected_str = "Smartphone, 10000.0 руб. Остаток: 5 шт."
+        assert str(product) == expected_str
+
+    def test_product_add(self):
+        """Тестируем магический метод __add__ (сложение продуктов)"""
+        product1 = classes.Product(
+            "Laptop", "Mac", 100000.0, 2
+        )  # Общая стоимость: 200 000
+        product2 = classes.Product(
+            "Phone", "iPhone", 50000.0, 3
+        )  # Общая стоимость: 150 000
+        # 200000 + 150000 = 350000
+        assert product1 + product2 == 350000.0
+
 
 class TestCategory:
     def setup_method(self):
@@ -48,14 +66,16 @@ class TestCategory:
         category = classes.Category("Laptop", "Portable Computer", [])
         assert category.name == "Laptop"
         assert category.description == "Portable Computer"
-        assert category.products == []
+        # Геттер теперь возвращает пустую строку, если товаров нет
+        assert category.products == ""
 
     def test_total_categories_and_products(self):
-        # Создание категорий с продуктами
-        category1 = classes.Category(
+
+        # Создание категорий с продуктами только ради увеличения счетчиков класса
+        classes.Category(
             "Electronics", "Devices", [classes.Product("Phone", "Smartphone", 700, 5)]
         )
-        category2 = classes.Category(
+        classes.Category(
             "Furniture", "Home", [classes.Product("Chair", "Office chair", 150, 20)]
         )
 
@@ -72,8 +92,8 @@ class TestCategory:
         initial_product_count = classes.Category.product_count
         category.add_product(product)
 
-        # Проверяем, что товар добавился (длина списка стала 1)
-        assert len(category.products) == 1
+        # Проверяем, что название товара появилось в итоговой строке
+        assert "Laptop" in category.products
         # Проверяем, что счетчик всех продуктов увеличился
         assert classes.Category.product_count == initial_product_count + 1
 
@@ -84,5 +104,30 @@ class TestCategory:
 
         expected_string = "Laptop, 150000.0 руб. Остаток: 3 шт.\n"
 
-        # Берем первый элемент из списка строк, который вернул геттер
-        assert category.products[0] == expected_string
+        # Теперь геттер возвращает саму строку целиком, индексы [0] больше не нужны
+        assert category.products == expected_string
+
+    def test_category_str(self):
+        """Тестируем магический метод __str__ для категории"""
+        product1 = classes.Product("Laptop", "Mac", 100000.0, 2)
+        product2 = classes.Product("Phone", "iPhone", 50000.0, 3)
+        category = classes.Category("Electronics", "Tech", [product1, product2])
+        expected_str = "Electronics, количество продуктов: 5 шт."
+        assert str(category) == expected_str
+
+
+class TestCategoryIter:
+    def test_category_iteration(self):
+        """Тестируем ручной проход по итератору"""
+        product1 = classes.Product("Laptop", "Mac", 100000.0, 2)
+        product2 = classes.Product("Phone", "iPhone", 50000.0, 3)
+        category = classes.Category("Electronics", "Tech", [product1, product2])
+
+        # Создаем экземпляр нашего итератора
+        iterator = classes.CategoryIter(category)
+
+        products_list = list(iterator)
+
+        assert len(products_list) == 2
+        assert products_list[0].name == "Laptop"
+        assert products_list[1].name == "Phone"
