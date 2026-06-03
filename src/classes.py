@@ -20,14 +20,19 @@ class Product:
         self.quantity = quantity
 
     @classmethod
-    def new_product(cls, products):
-        for product in products:
-            return cls(
-                name=product.get("name"),
-                description=product.get("description"),
-                price=product.get("price"),
-                quantity=product.get("quantity"),
-            )
+    def new_product(cls,products):
+        """Класс метод для создания продукта из словаря."""
+        if isinstance(products, list):
+            product_dict = products[0]
+        else:
+            product_dict = products
+        return cls(
+            name=product_dict["name"],
+            description=product_dict["description"],
+            price=product_dict["price"],
+            quantity=product_dict["quantity"]
+        )
+
 
     @property
     def price(self):
@@ -63,10 +68,10 @@ class Category:
     @property
     def products(self):
         product_list = [
-            f"{product.name}, {product.price} Остаток: {product.quantity}"
+            f"{product.name}, {product.price} руб. Остаток: {product.quantity} шт.\n"
             for product in self.__products
         ]
-        return self.__products, product_list
+        return product_list
 
 
 def json_to_classes_object(path=os.getenv("PATH_TO_JSON")):
