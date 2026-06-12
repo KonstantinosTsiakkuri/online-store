@@ -1,4 +1,4 @@
-
+import pytest
 
 from src import classes
 
@@ -54,6 +54,20 @@ class TestProduct:
         )  # Общая стоимость: 150 000
         # 200000 + 150000 = 350000
         assert product1 + product2 == 350000.0
+
+    def test_add_different_types_error(self):
+        """Тестируем ошибку при сложении разных классов"""
+        phone = classes.Smartphone(
+            "iPhone", "Apple", 100000.0, 10, "High", "Pro", 256, "Black"
+        )
+        grass = classes.LawnGrass(
+            "Газон", "Густой", 1000.0, 20, "Россия", "14 дней", "Зеленый"
+        )
+
+        # Вот как работает pytest.raises: мы говорим, что следующий блок кода ДОЛЖЕН вызвать TypeError
+        with pytest.raises(TypeError):
+            # Если сложение разных типов вызовет TypeError, тест будет считаться УСПЕШНЫМ (зеленым)
+             phone + grass
 
 
 class TestCategory:
@@ -131,3 +145,33 @@ class TestCategoryIter:
         assert len(products_list) == 2
         assert products_list[0].name == "Laptop"
         assert products_list[1].name == "Phone"
+
+
+class TestInheritance:
+    def test_smartphone_initialization(self):
+        """Тестируем создание смартфона и его уникальные атрибуты"""
+        phone = classes.Smartphone(
+            "iPhone 15", "Apple", 100000.0, 10, "High", "Pro", 256, "Black"
+        )
+        assert phone.name == "iPhone 15"
+        assert phone.efficiency == "High"
+        assert phone.model == "Pro"
+        assert phone.memory == 256
+
+    def test_lawngrass_initialization(self):
+        """Тестируем создание газонной травы"""
+        grass = classes.LawnGrass(
+            "Газон", "Густой", 1000.0, 20, "Россия", "14 дней", "Зеленый"
+        )
+        assert grass.name == "Газон"
+        assert grass.country == "Россия"
+        assert grass.germination_period == "14 дней"
+
+    def test_add_product_type_error(self):
+        """Тестируем ошибку при добавлении в категорию не продукта"""
+        category = classes.Category("Electronics", "Tech", [])
+
+        # Ожидаем ошибку TypeError
+        with pytest.raises(TypeError):
+            # Пытаемся добавить обычное число 5 (или строку "Привет") вместо объекта продукта
+            category.add_product(5)
