@@ -20,7 +20,7 @@ class Product:
         self.quantity = quantity
 
     @classmethod
-    def new_product(cls,products):
+    def new_product(cls, products):
         """Класс метод для создания продукта из словаря."""
         if isinstance(products, list):
             product_dict = products[0]
@@ -30,9 +30,8 @@ class Product:
             name=product_dict["name"],
             description=product_dict["description"],
             price=product_dict["price"],
-            quantity=product_dict["quantity"]
+            quantity=product_dict["quantity"],
         )
-
 
     @property
     def price(self):
@@ -44,6 +43,14 @@ class Product:
             print("Цена не должна быть нулевая или отрицательная")
         else:
             self.__price = price
+
+    def __str__(self):
+        return f"{self.name}, {self.__price} руб. Остаток: {self.quantity} шт."
+
+    def __add__(self, other):
+        product1 = self.quantity * self.price
+        product2 = other.quantity * other.price
+        return product1 + product2
 
 
 class Category:
@@ -67,11 +74,35 @@ class Category:
 
     @property
     def products(self):
-        product_list = [
-            f"{product.name}, {product.price} руб. Остаток: {product.quantity} шт.\n"
-            for product in self.__products
-        ]
-        return product_list
+        result_string = ""
+        for product in self.__products:
+            result_string += f"{str(product)}\n"
+        return result_string
+
+    def __str__(self):
+        total_quantity = 0
+        for product in self.__products:
+            total_quantity += product.quantity
+        return f"{self.name}, количество продуктов: {total_quantity} шт."
+
+
+class CategoryIter:
+    """Класс для итерации по продуктам категории"""
+
+    def __init__(self, category):
+        self.category = category
+        self.index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index < len(self.category._Category__products):
+            current_product = self.category._Category__products[self.index]
+            self.index += 1
+            return current_product
+        else:
+            raise StopIteration
 
 
 def json_to_classes_object(path=os.getenv("PATH_TO_JSON")):
