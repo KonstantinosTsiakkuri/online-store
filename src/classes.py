@@ -1,12 +1,37 @@
 import json
 import os
+from abc import ABC, abstractmethod
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-class Product:
+class BaseProduct(ABC):
+    """Абстрактный базовый класс для продуктов"""
+
+    @classmethod
+    @abstractmethod
+    def new_product(cls, *args, **kwargs):
+        """Метод для создания нового продукта"""
+        pass
+
+
+class MixinLog:
+    """Миксин, добавляющий логирование при создании объектов."""
+
+    def __init__(self, *args, **kwargs):
+        # Печатаем инфо об объекте
+        print(repr(self))
+        # Передаем управление дальше (в Product)
+        super().__init__(*args, **kwargs)
+
+    def __repr__(self):
+        # Опираемся на атрибуты, которые будут созданы в Product
+        return f"{self.__class__.__name__}({self.name}, {self.description}, {self.price}, {self.quantity})"
+
+
+class Product(MixinLog, BaseProduct):
     """Класс, создающий объект с информацией о продукте"""
 
     name: str
@@ -18,6 +43,11 @@ class Product:
         self.description = description
         self.__price = price
         self.quantity = quantity
+
+        # После того как все базовые атрибуты созданы,
+        # дергаем super(), который запустит __init__ у MixinLog,
+        # а MixinLog, в свою очередь, дергнет наш __repr__
+        super().__init__()
 
     @classmethod
     def new_product(cls, products):
@@ -79,7 +109,36 @@ class LawnGrass(Product):
         self.color = color
 
 
-class Category:
+class BaseContainer(ABC):
+    """Абстрактный класс-контейнер для Категорий и Заказов"""
+
+    # Заставляем всех наследников иметь метод добавления продукта
+    @abstractmethod
+    def add_product(self, product):
+        pass
+
+
+class Order(BaseContainer):
+    """Класс для заказа покупок"""
+
+    def __init__(self, product, quantity):
+        self.product = product
+        self.quantity = quantity
+
+        # Итоговая стоимость: цена продукта умноженная на количество в заказе
+        self.total_cost = self.product.price * self.quantity
+
+    def add_product(self, product):
+        # Шаг 1: Заменяем старый товар на новый!
+        self.product = product
+        # Итоговая стоимость: цена продукта умноженная на количество в заказе
+        self.total_cost = self.product.price * self.quantity
+
+    def __str__(self):
+        return f"Заказ: {self.product.name}, количество: {self.quantity}, итог: {self.total_cost} руб."
+
+
+class Category(BaseContainer):
     """Класс, создающий объект с информацией о категориях списка продкутов класса Product"""
 
     category_count = 0
