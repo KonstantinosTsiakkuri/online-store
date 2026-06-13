@@ -48,9 +48,35 @@ class Product:
         return f"{self.name}, {self.__price} руб. Остаток: {self.quantity} шт."
 
     def __add__(self, other):
-        product1 = self.quantity * self.price
-        product2 = other.quantity * other.price
-        return product1 + product2
+        if type(self) is not type(other):
+            raise TypeError("Ошибка сложения разных товаров")
+        else:
+            product1 = self.quantity * self.price
+            product2 = other.quantity * other.price
+            return product1 + product2
+
+
+class Smartphone(Product):
+    def __init__(
+        self, name, description, price, quantity, efficiency, model, memory, color
+    ):
+        super().__init__(name, description, price, quantity)
+
+        self.efficiency = efficiency
+        self.model = model
+        self.memory = memory
+        self.color = color
+
+
+class LawnGrass(Product):
+    def __init__(
+        self, name, description, price, quantity, country, germination_period, color
+    ):
+        super().__init__(name, description, price, quantity)
+
+        self.country = country
+        self.germination_period = germination_period
+        self.color = color
 
 
 class Category:
@@ -69,8 +95,11 @@ class Category:
         Category.product_count += len(self.__products)
 
     def add_product(self, product):
-        self.__products.append(product)
-        Category.product_count += 1
+        if isinstance(product, Product):
+            self.__products.append(product)
+            Category.product_count += 1
+        else:
+            raise TypeError("Можно добавлять только продукты или их наследников")
 
     @property
     def products(self):
