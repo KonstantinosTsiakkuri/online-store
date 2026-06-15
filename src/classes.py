@@ -39,6 +39,9 @@ class Product(MixinLog, BaseProduct):
     quantity: int
 
     def __init__(self, name, description, price, quantity):
+        if quantity == 0:
+            raise ValueError("Товар с нулевым количеством не может быть добавлен")
+
         self.name = name
         self.description = description
         self.__price = price
@@ -129,10 +132,18 @@ class Order(BaseContainer):
         self.total_cost = self.product.price * self.quantity
 
     def add_product(self, product):
-        # Шаг 1: Заменяем старый товар на новый!
-        self.product = product
-        # Итоговая стоимость: цена продукта умноженная на количество в заказе
-        self.total_cost = self.product.price * self.quantity
+        try:
+            if product.quantity == 0:
+                raise ZeroQuantityException()
+        except ZeroQuantityException as e:
+            print(e)
+        else:
+            # Если ошибки не было, заменяем товар и пересчитываем итог
+            self.product = product
+            self.total_cost = self.product.price * self.quantity
+            print("Товар успешно добавлен")
+        finally:
+            print("Обработка добавления товара завершена")
 
     def __str__(self):
         return f"Заказ: {self.product.name}, количество: {self.quantity}, итог: {self.total_cost} руб."
@@ -154,11 +165,24 @@ class Category(BaseContainer):
         Category.product_count += len(self.__products)
 
     def add_product(self, product):
-        if isinstance(product, Product):
+        if not isinstance(product, Product):
+            raise TypeError("Можно добавлять только продукты или их наследников")
+
+        try:
+            if product.quantity == 0:
+                # Если 0, вызываем нашу кастомную ошибку
+                raise ZeroQuantityException()
+        except ZeroQuantityException as e:
+            # Ловим её и печатаем сообщение
+            print(e)
+        else:
+            # Если ошибки не было, добавляем товар
             self.__products.append(product)
             Category.product_count += 1
-        else:
-            raise TypeError("Можно добавлять только продукты или их наследников")
+            print("Товар успешно добавлен")
+        finally:
+            # Срабатывает всегда
+            print("Обработка добавления товара завершена")
 
     @property
     def products(self):
@@ -166,6 +190,19 @@ class Category(BaseContainer):
         for product in self.__products:
             result_string += f"{str(product)}\n"
         return result_string
+
+
+    def middle_price(self):
+        """Подсчитывает средний ценник всех товаров в категории"""
+        try:
+            # Считаем общую стоимость всех уникальных товаров (по их базовой цене)
+            total_price = sum(product.price for product in self.__products)
+            # Пытаемся поделить на количество товаров в списке
+            return total_price / len(self.__products)
+        except ZeroDivisionError:
+            # Если словили ошибку деления на ноль (список пуст), возвращаем 0
+            return 0
+
 
     def __str__(self):
         total_quantity = 0
@@ -191,6 +228,14 @@ class CategoryIter:
             return current_product
         else:
             raise StopIteration
+
+
+class ZeroQuantityException(Exception):
+    """Пользовательское исключение для перехвата добавления товаров с нулевым количеством"""
+
+    def __init__(self, message="Товар с нулевым количеством не может быть добавлен"):
+        self.message = message
+        super().__init__(self.message)
 
 
 def json_to_classes_object(path=os.getenv("PATH_TO_JSON")):

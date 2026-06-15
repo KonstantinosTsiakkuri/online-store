@@ -255,3 +255,69 @@ class TestOrder:
 
         expected_str = "Заказ: iPhone 15, количество: 2, итог: 200000.0 руб."
         assert str(order) == expected_str
+
+
+class TestExceptionsAndAdvancedLogic:
+
+    def test_product_init_zero_quantity(self):
+        """Тестируем вызов ValueError при создании товара с нулевым количеством"""
+        with pytest.raises(ValueError) as exc_info:
+            # Пытаемся создать товар с quantity = 0
+            classes.Product("Брак", "Сломанный товар", 1000.0, 0)
+
+        # Проверяем, что текст вызванной ошибки в точности совпадает с ожидаемым
+        assert str(exc_info.value) == "Товар с нулевым количеством не может быть добавлен"
+
+    def test_category_middle_price(self):
+        """Тестируем подсчет средней цены и обработку деления на ноль"""
+        category = classes.Category("Smartphones", "Tech", [])
+
+        # Проверяем, что пустая категория возвращает 0, а не падает с ZeroDivisionError
+        assert category.middle_price() == 0
+
+        phone1 = classes.Smartphone("iPhone", "Apple", 100000.0, 10, "High", "Pro", 256, "Black")
+        phone2 = classes.Smartphone("Samsung", "Korea", 50000.0, 10, "High", "Ultra", 256, "Black")
+        category.add_product(phone1)
+        category.add_product(phone2)
+
+        # (100000 + 50000) / 2 = 75000
+        assert category.middle_price() == 75000.0
+
+    def test_add_product_zero_quantity(self, capsys):
+        """Тестируем работу кастомного исключения при добавлении нулевого товара"""
+        category = classes.Category("Smartphones", "Tech", [])
+        phone = classes.Smartphone("iPhone", "Apple", 100000.0, 10, "High", "Pro", 256, "Black")
+
+        # Очищаем буфер консоли от лога создания объекта (MixinLog)
+        capsys.readouterr()
+
+        # Искусственно обнуляем количество и пытаемся добавить в категорию
+        phone.quantity = 0
+        category.add_product(phone)
+
+        # Забираем логи добавления
+        captured = capsys.readouterr()
+
+        # Проверяем, что ошибка перехвачена блоком except и выведена
+        assert "Товар с нулевым количеством не может быть добавлен" in captured.out
+        # Проверяем, что блок finally сработал корректно
+        assert "Обработка добавления товара завершена" in captured.out
+
+    def test_add_product_success_output(self, capsys):
+        """Тестируем вывод сообщений при успешном добавлении товара"""
+        category = classes.Category("Smartphones", "Tech", [])
+        phone = classes.Smartphone("iPhone", "Apple", 100000.0, 10, "High", "Pro", 256, "Black")
+
+        # Очищаем буфер консоли от лога создания объекта (MixinLog)
+        capsys.readouterr()
+
+        # Добавляем товар (ошибки быть не должно)
+        category.add_product(phone)
+
+        # Забираем логи
+        captured = capsys.readouterr()
+
+        # Проверяем, что блок else сработал (товар добавлен)
+        assert "Товар успешно добавлен" in captured.out
+        # Проверяем, что блок finally сработал в любом случае
+        assert "Обработка добавления товара завершена" in captured.out
