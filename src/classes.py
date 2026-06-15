@@ -1,12 +1,37 @@
 import json
 import os
+from abc import ABC, abstractmethod
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
-class Product:
+class BaseProduct(ABC):
+    """Абстрактный базовый класс для продуктов"""
+
+    @classmethod
+    @abstractmethod
+    def new_product(cls, *args, **kwargs):
+        """Метод для создания нового продукта"""
+        pass
+
+
+class MixinLog:
+    """Миксин, добавляющий логирование при создании объектов."""
+
+    def __init__(self, *args, **kwargs):
+        # Печатаем инфо об объекте
+        print(repr(self))
+        # Передаем управление дальше (в Product)
+        super().__init__(*args, **kwargs)
+
+    def __repr__(self):
+        # Опираемся на атрибуты, которые будут созданы в Product
+        return f"{self.__class__.__name__}({self.name}, {self.description}, {self.price}, {self.quantity})"
+
+
+class Product(MixinLog, BaseProduct):
     """Класс, создающий объект с информацией о продукте"""
 
     name: str
@@ -14,10 +39,18 @@ class Product:
     quantity: int
 
     def __init__(self, name, description, price, quantity):
+        if quantity == 0:
+            raise ValueError("Товар с нулевым количеством не может быть добавлен")
+
         self.name = name
         self.description = description
         self.__price = price
         self.quantity = quantity
+
+        # После того как все базовые атрибуты созданы,
+        # дергаем super(), который запустит __init__ у MixinLog,
+        # а MixinLog, в свою очередь, дергнет наш __repr__
+        super().__init__()
 
     @classmethod
     def new_product(cls, products):
@@ -79,7 +112,44 @@ class LawnGrass(Product):
         self.color = color
 
 
-class Category:
+class BaseContainer(ABC):
+    """Абстрактный класс-контейнер для Категорий и Заказов"""
+
+    # Заставляем всех наследников иметь метод добавления продукта
+    @abstractmethod
+    def add_product(self, product):
+        pass
+
+
+class Order(BaseContainer):
+    """Класс для заказа покупок"""
+
+    def __init__(self, product, quantity):
+        self.product = product
+        self.quantity = quantity
+
+        # Итоговая стоимость: цена продукта умноженная на количество в заказе
+        self.total_cost = self.product.price * self.quantity
+
+    def add_product(self, product):
+        try:
+            if product.quantity == 0:
+                raise ZeroQuantityException()
+        except ZeroQuantityException as e:
+            print(e)
+        else:
+            # Если ошибки не было, заменяем товар и пересчитываем итог
+            self.product = product
+            self.total_cost = self.product.price * self.quantity
+            print("Товар успешно добавлен")
+        finally:
+            print("Обработка добавления товара завершена")
+
+    def __str__(self):
+        return f"Заказ: {self.product.name}, количество: {self.quantity}, итог: {self.total_cost} руб."
+
+
+class Category(BaseContainer):
     """Класс, создающий объект с информацией о категориях списка продкутов класса Product"""
 
     category_count = 0
@@ -95,11 +165,24 @@ class Category:
         Category.product_count += len(self.__products)
 
     def add_product(self, product):
-        if isinstance(product, Product):
+        if not isinstance(product, Product):
+            raise TypeError("Можно добавлять только продукты или их наследников")
+
+        try:
+            if product.quantity == 0:
+                # Если 0, вызываем нашу кастомную ошибку
+                raise ZeroQuantityException()
+        except ZeroQuantityException as e:
+            # Ловим её и печатаем сообщение
+            print(e)
+        else:
+            # Если ошибки не было, добавляем товар
             self.__products.append(product)
             Category.product_count += 1
-        else:
-            raise TypeError("Можно добавлять только продукты или их наследников")
+            print("Товар успешно добавлен")
+        finally:
+            # Срабатывает всегда
+            print("Обработка добавления товара завершена")
 
     @property
     def products(self):
@@ -107,6 +190,19 @@ class Category:
         for product in self.__products:
             result_string += f"{str(product)}\n"
         return result_string
+
+
+    def middle_price(self):
+        """Подсчитывает средний ценник всех товаров в категории"""
+        try:
+            # Считаем общую стоимость всех уникальных товаров (по их базовой цене)
+            total_price = sum(product.price for product in self.__products)
+            # Пытаемся поделить на количество товаров в списке
+            return total_price / len(self.__products)
+        except ZeroDivisionError:
+            # Если словили ошибку деления на ноль (список пуст), возвращаем 0
+            return 0
+
 
     def __str__(self):
         total_quantity = 0
@@ -132,6 +228,14 @@ class CategoryIter:
             return current_product
         else:
             raise StopIteration
+
+
+class ZeroQuantityException(Exception):
+    """Пользовательское исключение для перехвата добавления товаров с нулевым количеством"""
+
+    def __init__(self, message="Товар с нулевым количеством не может быть добавлен"):
+        self.message = message
+        super().__init__(self.message)
 
 
 def json_to_classes_object(path=os.getenv("PATH_TO_JSON")):
