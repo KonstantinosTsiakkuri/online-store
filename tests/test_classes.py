@@ -18,8 +18,15 @@ class TestProduct:
 
     def test_price_setter_negative(self, capsys):
         product = classes.Product("Laptop", "Portable computer", 1500.0, 10)
+
+        # Считываем и выбрасываем лог от миксина, очищая буфер консоли
+        capsys.readouterr()
+
+        # Теперь срабатывает только принты от сеттера цены
         product.price = -1000
         captured = capsys.readouterr()
+
+        # Теперь тут только одна нужная нам строка
         assert captured.out == "Цена не должна быть нулевая или отрицательная\n"
         assert product.price == 1500  # цена не должна измениться
 
@@ -67,7 +74,7 @@ class TestProduct:
         # Вот как работает pytest.raises: мы говорим, что следующий блок кода ДОЛЖЕН вызвать TypeError
         with pytest.raises(TypeError):
             # Если сложение разных типов вызовет TypeError, тест будет считаться УСПЕШНЫМ (зеленым)
-             phone + grass
+            phone + grass
 
 
 class TestCategory:
@@ -175,3 +182,76 @@ class TestInheritance:
         with pytest.raises(TypeError):
             # Пытаемся добавить обычное число 5 (или строку "Привет") вместо объекта продукта
             category.add_product(5)
+
+
+class TestAdvancedArchitecture:
+    def test_base_product_instantiation(self):
+        """Тестируем, что абстрактный класс BaseProduct нельзя инстанцировать напрямую"""
+        # Ожидаем ошибку TypeError при попытке создать абстрактный продукт
+        with pytest.raises(TypeError):
+            classes.BaseProduct()
+
+    def test_mixin_log_output(self, capsys):
+        """Тестируем работу миксина (вывод в консоль при создании объекта)"""
+        # Создаем продукт. В этот момент миксин должен сработать и напечатать текст
+        classes.Product("Laptop", "MacBook", 150000.0, 3)
+
+        # Перехватываем то, что попало в консоль
+        captured = capsys.readouterr()
+
+        # Проверяем, что вывод содержит ожидаемую строку от метода __repr__
+        assert "Product(Laptop, MacBook, 150000.0, 3)" in captured.out
+
+    def test_mixin_log_output_smartphone(self, capsys):
+        """Тестируем работу миксина для наследников (Смартфон)"""
+        classes.Smartphone("iPhone", "Apple", 100000.0, 10, "High", "Pro", 256, "Black")
+        captured = capsys.readouterr()
+
+        # Миксин должен динамически определить, что это Smartphone
+        assert "Smartphone(iPhone, Apple, 100000.0, 10)" in captured.out
+
+
+class TestOrder:
+    def test_order_initialization(self):
+        """Тестируем создание заказа и автоматический расчет итоговой стоимости"""
+        phone = classes.Smartphone(
+            "iPhone 15", "Apple", 100000.0, 10, "High", "Pro", 256, "Black"
+        )
+        order = classes.Order(phone, 2)
+
+        # Проверяем, что атрибуты сохранились верно
+        assert order.product == phone
+        assert order.quantity == 2
+        # 100 000 * 2 = 200 000
+        assert order.total_cost == 200000.0
+
+    def test_order_add_product(self):
+        """Тестируем замену товара в заказе и перерасчет стоимости"""
+        phone = classes.Smartphone(
+            "iPhone 15", "Apple", 100000.0, 10, "High", "Pro", 256, "Black"
+        )
+        grass = classes.LawnGrass(
+            "Газон", "Густой", 1000.0, 20, "Россия", "14 дней", "Зеленый"
+        )
+
+        # Создаем заказ с телефоном
+        order = classes.Order(phone, 2)
+        assert order.total_cost == 200000.0
+
+        # Меняем телефон на газонную траву
+        order.add_product(grass)
+
+        # Проверяем, что товар заменился
+        assert order.product == grass
+        # Проверяем, что стоимость пересчиталась: 1000 * 2 = 2000
+        assert order.total_cost == 2000.0
+
+    def test_order_str(self):
+        """Тестируем строковое отображение заказа"""
+        phone = classes.Smartphone(
+            "iPhone 15", "Apple", 100000.0, 10, "High", "Pro", 256, "Black"
+        )
+        order = classes.Order(phone, 2)
+
+        expected_str = "Заказ: iPhone 15, количество: 2, итог: 200000.0 руб."
+        assert str(order) == expected_str
